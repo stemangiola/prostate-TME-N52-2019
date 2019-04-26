@@ -9,7 +9,7 @@ age <- function(dob, age.day = lubridate::today(), units = "years", floor = TRUE
 }
 
 make_stats_and_plots = function(){
-	stats_STAR = do.call("rbind", lapply(dir(path = my_data_dir, recursive=T, pattern="Log\\.final\\.out$", full.names = T), function(i){
+	stats_STAR = do.call("rbind", lapply(dir(path = sprintf("%s/alignment_hg38", my_data_dir), recursive=T, pattern="Log\\.final\\.out$", full.names = T), function(i){
 		df <- suppressMessages(suppressWarnings(
 			read_delim(i,  "\t", escape_double = FALSE, trim_ws = TRUE, col_names = FALSE)
 		))
@@ -55,7 +55,7 @@ make_stats_and_plots = function(){
 		height = 183 / 3
 	)
 	
-	stats_RNAseqc = do.call("rbind", lapply(dir(path = my_data_dir, recursive=T, pattern="metrics\\.tmp\\.txt$", full.names = T), function(i){
+	stats_RNAseqc = do.call("rbind", lapply(dir(path = sprintf("%s/alignment_hg38", my_data_dir), recursive=T, pattern="metrics\\.tmp\\.txt$", full.names = T), function(i){
 		df <- suppressMessages(suppressWarnings(
 			read_delim(i, "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
 		))
@@ -139,8 +139,8 @@ make_stats_and_plots = function(){
 	annot = clinical_annot
 	annot = left_join(annot, exp_seq_annot,  by = c("DOS"))
 	
-	annot = left_join(annot, stats_STAR %>% filter(reference_genome == "alignment_hg38") %>% spread(info, value), by = c("N adapter", "S adapter")) 
-	annot = left_join(annot, stats_RNAseqc %>% filter(reference_genome == "alignment_hg38") %>% spread(info, value), by = c("N adapter", "S adapter")) 
+	annot = left_join(annot, stats_STAR %>% spread(info, value), by = c("N adapter", "S adapter")) 
+	annot = left_join(annot, stats_RNAseqc  %>% spread(info, value), by = c("N adapter", "S adapter")) 
 	annot = left_join(annot, subread_stats %>% spread(info, value), by = c("N adapter", "S adapter")) 
 	annot = left_join(annot, facs_annot,  by = c("DOS", "cell type"))
 	annot = left_join(annot, capra_annot,  by = c("DOS", "RARP", "UBR"))

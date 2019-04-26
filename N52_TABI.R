@@ -42,6 +42,12 @@ my_theme =
 	)
 
 #############################################################
+# Setup data directory from 
+my_data_dir = '..'
+#############################################################
+
+
+#############################################################
 # Load data #################################################
 
 # Get counts
@@ -58,8 +64,6 @@ stat = make_stats_and_plots()
 annot = stat$annot %>% mutate_if(is.character, as.factor)
 
 
-# Save stats
-save(list=c("ex", "annot"), file="input_parallel_TABI.RData")
 
 
 ex = as_tibble(d$counts, rownames="GeneID") %>%
@@ -69,6 +73,9 @@ ex = as_tibble(d$counts, rownames="GeneID") %>%
 		by = "GeneID"
 	) %>%
 	dplyr::select(-GeneID)
+
+# Save stats
+save(list=c("ex", "annot"), file="input_parallel_TABI.RData")
 
 #############################################################
 # MDS plots #################################################
@@ -201,61 +208,54 @@ foreach(ct = c("E", "F", "M", "T"), .combine = bind_rows) %do%
 #############################################################
 # Sample composititon #######################################
 
-{
-	library(ARMET)
-	
-	ARMET_wrap = function(ct){
-		ARMET_tc(
-			mix = 
-				d$counts[,which(annot$cell_type_formatted == ct)] %>% 
-				as_tibble %>%
-				mutate(gene = d$genes$symbol) %>%
-				dplyr::select(gene, everything()) %>%
-				filter(!is.na(gene)),
-			
-			my_design =
-				model.matrix(
-					~
-						annot %>% filter(cell_type_formatted == ct) %>% pull(CAPRA_TOTAL) %>% scale + 
-						annot %>% filter(cell_type_formatted == ct) %>% pull(batch) 
-				) %>%
-				as.data.frame() %>%
-				as_tibble()	 %>%
-				mutate(sample = annot %>% filter(cell_type_formatted == ct) %>% pull(file) ) %>%
-				setNames(c("(Intercept)", "CAPRA_TOTAL", "batch", "sample")),
-			cov_to_test = "CAPRA_TOTAL", do_debug = F, save_fit = T, verbose = T
-		)
-	}
-	
-	# Save figures
-	foreach(ct = c("E", "F", "M", "T")) %do% {
-		load(sprintf("dtc_%s.RData", ct))
-		dtc %>%
-			ARMET_plotPolar(
-				size_geom_text = 1.8, 
-				my_breaks=c(0, 0.01, 0.1,0.5,1),
-				prop_filter = 0.01,
-				barwidth = 0.5, barheight = 3,
-				legend_justification = 0.78
-			) +
-			ggtitle(ct)
-	} %>%
-		gridExtra::grid.arrange(grobs=.) %>%	
-		ggsave(plot = .,
-					 "dtc_polar.pdf",
-					 useDingbats=FALSE,
-					 units = c("mm"),
-					 width = 183 ,
-					 height = 183 
-		)
-	
-	#load(sprintf("dtc_%s.RData", "M"))
-	plot(dtc$proportions$CAPRA_TOTAL[1:13], dtc$proportions$neutrophil[53:65])
-	dtc$proportions	%>% ggplot(x = sample_idx, y = dtc$proportions %>% dplyr::select(neutrophil) %>% drop_na())
-	
-	
-	
-}
+
+library(ARMET)
+
+# ARMET_wrap = function(ct){
+# 	ARMET_tc(
+# 		mix = 
+# 			d$counts[,which(annot$cell_type_formatted == ct)] %>% 
+# 			as_tibble %>%
+# 			mutate(gene = d$genes$symbol) %>%
+# 			dplyr::select(gene, everything()) %>%
+# 			filter(!is.na(gene)),
+# 		
+# 		my_design =
+# 			model.matrix(
+# 				~
+# 					annot %>% filter(cell_type_formatted == ct) %>% pull(CAPRA_TOTAL) %>% scale + 
+# 					annot %>% filter(cell_type_formatted == ct) %>% pull(batch) 
+# 			) %>%
+# 			as.data.frame() %>%
+# 			as_tibble()	 %>%
+# 			mutate(sample = annot %>% filter(cell_type_formatted == ct) %>% pull(file) ) %>%
+# 			setNames(c("(Intercept)", "CAPRA_TOTAL", "batch", "sample")),
+# 		cov_to_test = "CAPRA_TOTAL", do_debug = F, save_fit = T, verbose = T
+# 	)
+# }
+
+# Save figures
+foreach(ct = c("E", "F", "M", "T")) %do% {
+	load(sprintf("%s/dtc_%s.RData", my_data_dir, ct))
+	dtc %>%
+		ARMET_plotPolar(
+			size_geom_text = 1.8, 
+			my_breaks=c(0, 0.01, 0.1,0.5,1),
+			prop_filter = 0.01,
+			barwidth = 0.5, barheight = 3,
+			legend_justification = 0.78
+		) +
+		ggtitle(ct)
+} %>%
+	gridExtra::grid.arrange(grobs=.) %>%	
+	ggsave(plot = .,
+				 "dtc_polar.pdf",
+				 useDingbats=FALSE,
+				 units = c("mm"),
+				 width = 183 ,
+				 height = 183 
+	)
+
 
 # Cibersort
 source("CIBERSORT_annotated.R")
@@ -302,40 +302,38 @@ foreach(ct = c("E", "F", "M", "T"), .combine = bind_rows) %dopar% {
 
 #############################################################
 #  unix311 524 % parallel --ungroup --linebuffer 'Rscript run_parallel_TABI.R E {}' ::: 1 2 3 4 5
+#  unix311 524 % parallel --ungroup --linebuffer 'Rscript run_parallel_TABI.R F {}' ::: 1 2 3 4 5
+#  unix311 524 % parallel --ungroup --linebuffer 'Rscript run_parallel_TABI.R M {}' ::: 1 2 3 4 5
+#  unix311 524 % parallel --ungroup --linebuffer 'Rscript run_parallel_TABI.R T {}' ::: 1 2 3 4 5
 #############################################################
 
-
-run_directory = "."
-
-tabi_res_E = collect_res("E", run_directory)
-tabi_inflection_E = collect_inflections("E", run_directory)
-tabi_gen_E = collect_generated_quantities("E", run_directory)
+tabi_res_E = collect_res("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+tabi_inflection_E = collect_inflections("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+tabi_gen_E = collect_generated_quantities("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
 tabi_res_E.annot = annotate_res(tabi_res_E)
 
-tabi_res_T = collect_res("T", run_directory)
-tabi_inflection_T = collect_inflections("T", run_directory)
-tabi_gen_T = collect_generated_quantities("T", run_directory)
+tabi_res_T = collect_res("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+tabi_inflection_T = collect_inflections("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+tabi_gen_T = collect_generated_quantities("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
 tabi_res_T.annot = annotate_res(tabi_res_T)
 
-tabi_res_M = collect_res("M", run_directory)
-tabi_inflection_M = collect_inflections("M", run_directory)
-tabi_gen_M = collect_generated_quantities("M", run_directory)
+tabi_res_M = collect_res("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+tabi_inflection_M = collect_inflections("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+tabi_gen_M = collect_generated_quantities("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
 tabi_res_M.annot = annotate_res(tabi_res_M)
 
-#############################################################
-
-tabi_res_F = collect_res("F", run_directory)
-tabi_inflection_F = collect_inflections("F", run_directory)
-tabi_gen_F = collect_generated_quantities("F", run_directory)
+tabi_res_F = collect_res("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+tabi_inflection_F = collect_inflections("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+tabi_gen_F = collect_generated_quantities("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
 tabi_res_F.annot = annotate_res(tabi_res_F)
 
 #############################################################
 # Plot all genes ############################################
 
 tabi_res_E %>% ungroup %>% rename(symbol=gene) %>% filter_too_sparse(tabi_gen_E) %>% filter_out_CI(tabi_gen_E) %>% mutate(`Cell type` = "E")  %>% 
-	bind_rows(	tabi_res_F %>% rename(symbol=gene) %>% ungroup %>% filter_too_sparse(tabi_gen_F) %>% filter_out_CI(tabi_gen_F) %>% mutate(`Cell type` = "F")) %>%
-	bind_rows(	tabi_res_T %>% rename(symbol=gene) %>% ungroup %>% filter_too_sparse(tabi_gen_T) %>% filter_out_CI(tabi_gen_T) %>% mutate(`Cell type` = "T")) %>%
-	bind_rows(	tabi_res_M %>% rename(symbol=gene) %>% ungroup %>% filter_too_sparse(tabi_gen_M) %>% filter_out_CI(tabi_gen_M) %>% mutate(`Cell type` = "M")) %>%
+bind_rows(	tabi_res_F %>% rename(symbol=gene) %>% ungroup %>% filter_too_sparse(tabi_gen_F) %>% filter_out_CI(tabi_gen_F) %>% mutate(`Cell type` = "F")) %>%
+bind_rows(	tabi_res_T %>% rename(symbol=gene) %>% ungroup %>% filter_too_sparse(tabi_gen_T) %>% filter_out_CI(tabi_gen_T) %>% mutate(`Cell type` = "T")) %>%
+bind_rows(	tabi_res_M %>% rename(symbol=gene) %>% ungroup %>% filter_too_sparse(tabi_gen_M) %>% filter_out_CI(tabi_gen_M) %>% mutate(`Cell type` = "M")) %>%
 	mutate(DE = conf.low * conf.high > 0) %>%
 	#sample_frac(0.1) %>%
 	arrange(estimate) %>%
