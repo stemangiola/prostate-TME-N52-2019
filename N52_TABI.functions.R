@@ -581,7 +581,7 @@ annotate_res = function(res_df){
 	res_df %>% 
 		ungroup() %>%
 		filter(covariate_idx == 2) %>% 
-		filter(conf.low * conf.high > 0) %>% 
+		filter(.lower * .upper > 0) %>% 
 		
 		# Correct inflection
 		# Some inflection 2.5% are NaN that's why the transform produces NaNs
@@ -653,8 +653,8 @@ filter_too_sparse = function(tbl, gen_df, prop = 13/3){
 			# Print
 			# print(
 			# 	(.) %>% 
-			# 		distinct(symbol, conf.low, conf.high, `non zero`) %>% 
-			# 		filter(conf.low * conf.high > 0) %>%
+			# 		distinct(symbol, .lower, .upper, `non zero`) %>% 
+			# 		filter(.lower * .upper > 0) %>%
 			# 		filter(`non zero` <= ceiling(prop)) %>% nrow
 			# )
 			
@@ -669,7 +669,7 @@ filter_out_CI = function(tbl, gen_df, prop = 13/3){
 	tbl %>% left_join(
 		gen_df %>% 
 			group_by(gene) %>% 
-			summarise(n_out_CI = sum( (conf.low-`read count`) * (conf.high-`read count`) > 0 )) %>%
+			summarise(n_out_CI = sum( (.lower-`read count`) * (.upper-`read count`) > 0 )) %>%
 			dplyr::rename(symbol=gene)
 	) %>%
 		do({
@@ -677,8 +677,8 @@ filter_out_CI = function(tbl, gen_df, prop = 13/3){
 			# Print
 			# print(
 			# 	(.) %>% 
-			# 		distinct(symbol, conf.low, conf.high, n_out_CI) %>% 
-			# 		filter(conf.low * conf.high > 0) %>%
+			# 		distinct(symbol, .lower, .upper, n_out_CI) %>% 
+			# 		filter(.lower * .upper > 0) %>%
 			# 		filter(n_out_CI >= floor(prop)) %>%
 			# 		nrow
 			# )
@@ -712,7 +712,7 @@ print_summary = function(res_df, gen_df, annot_df){
 				filter_too_sparse() %>%
 				filter_out_CI() %>%
 				filter(grepl("secreted|membrane", `Protein class`)) %>%
-				mutate(`Safe estimate` = ifelse(how=="up", conf.low, conf.high)) %>%
+				mutate(`Safe estimate` = ifelse(how=="up", .lower, .upper)) %>%
 				distinct(when, how, symbol, `Safe estimate`) %>%
 				group_by(when, how) %>% 
 				arrange(`Safe estimate` %>% abs %>% desc) %>%
@@ -730,7 +730,7 @@ print_summary = function(res_df, gen_df, annot_df){
 			plots = 
 				(.) %>%
 				ggplot(aes(x=CAPRA_TOTAL, y=`read count`, color=gene)) +
-				geom_errorbar(aes(ymin=conf.low, ymax=conf.high), width = 0) +
+				geom_errorbar(aes(ymin=.lower, ymax=.upper), width = 0) +
 				geom_jitter() +
 				geom_vline(xintercept = 0, linetype="dashed") +
 				facet_wrap(~gene, scale="free") +
@@ -809,7 +809,7 @@ print_gene_info = function(annot_df, gen_df, inflection_df, prop_filter_CI = 13/
 		filter(namespace_1003 == "biological_process") %>%
 		
 		# Safe estimate
-		mutate(`Safe estimate` = ifelse(how=="up", conf.low, conf.high)) %>%
+		mutate(`Safe estimate` = ifelse(how=="up", .lower, .upper)) %>%
 		
 		# Arrange
 		arrange(desc(abs(`Safe estimate`)), symbol) %>%
@@ -831,7 +831,7 @@ print_gene_info = function(annot_df, gen_df, inflection_df, prop_filter_CI = 13/
 				gen_df %>% filter(gene== (temp %>% pull(symbol) %>% unique() %>% as.character())) %>%
 					
 					ggplot(aes(x=CAPRA_TOTAL, y=`read count`, color=gene)) +
-					geom_errorbar(aes(ymin=conf.low, ymax=conf.high), width = 0) +
+					geom_errorbar(aes(ymin=.lower, ymax=.upper), width = 0) +
 					geom_jitter() +
 					geom_vline(xintercept = 0, linetype="dashed") +
 					facet_wrap(~gene, scale="free") +
@@ -922,7 +922,7 @@ core_gene_regression_plot = function(tbl, inflection_df, gen_df, multiple_ct = F
 				), 
 			size=2
 		) +
-		geom_errorbar(aes(x=CAPRA_TOTAL,ymin=conf.low, ymax=conf.high), width = 0.2, alpha=ifelse(multiple_ct, 0.5, 0.8)) +
+		geom_errorbar(aes(x=CAPRA_TOTAL,ymin=.lower, ymax=.upper), width = 0.2, alpha=ifelse(multiple_ct, 0.5, 0.8)) +
 		scale_y_log10() +
 		scale_color_brewer(palette="Dark2") +
 		theme_bw() +
@@ -958,7 +958,7 @@ print_gene_regression = function(
 				(.)
 		}	%>%
 			
-			distinct(symbol, conf.low, conf.high) %>%
+			distinct(symbol, .lower, .upper) %>%
 			
 			# Add read counts
 			left_join(	gen_df %>% distinct(symbol, `read count`, CAPRA_TOTAL) 	) %>%
