@@ -624,7 +624,10 @@ annotate_res = function(res_df){
 		left_join(
 			biomaRt::getBM(
 				filters=c("hgnc_symbol"),
-				values = (.)$symbol , 
+				values = (.) %>%
+				# Correct for unknown error in annotation DB
+				filter(symbol != "MRPS34") %>%
+				pull(symbol) %>% unique, 
 				attributes = c(
 					'ensembl_gene_id', 
 					'entrezgene','hgnc_symbol',

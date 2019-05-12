@@ -260,7 +260,6 @@ foreach(ct = c("E", "F", "M", "T")) %do% {
 # Cibersort
 source("CIBERSORT_annotated.R")
 
-
 foreach(ct = c("E", "F", "M", "T"), .combine = bind_rows) %dopar% {
 	
 	d$counts[,which(annot$cell_type_formatted == ct)] %>% 
@@ -294,9 +293,6 @@ foreach(ct = c("E", "F", "M", "T"), .combine = bind_rows) %dopar% {
 		}
 }
 
-
-
-
 #############################################################
 # Run DE ####################################################
 
@@ -307,25 +303,36 @@ foreach(ct = c("E", "F", "M", "T"), .combine = bind_rows) %dopar% {
 #  unix311 524 % parallel --ungroup --linebuffer 'Rscript run_parallel_TABI.R T {}' ::: 1 2 3 4 5
 #############################################################
 
-tabi_res_E = collect_res("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_inflection_E = collect_inflections("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_gen_E = collect_generated_quantities("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_res_E.annot = annotate_res(tabi_res_E)
+# tabi_res_E = collect_res("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_inflection_E = collect_inflections("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_gen_E = collect_generated_quantities("E", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_res_E.annot = annotate_res(tabi_res_E)
+# 
+# tabi_res_T = collect_res("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_inflection_T = collect_inflections("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_gen_T = collect_generated_quantities("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_res_T.annot = annotate_res(tabi_res_T)
+# 
+# tabi_res_M = collect_res("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_inflection_M = collect_inflections("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_gen_M = collect_generated_quantities("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_res_M.annot = annotate_res(tabi_res_M)
+# 
+# tabi_res_F = collect_res("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_inflection_F = collect_inflections("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_gen_F = collect_generated_quantities("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
+# tabi_res_F.annot = annotate_res(tabi_res_F)
+# 
+# save(
+# 	list = c(
+# 		"tabi_res_E", "tabi_inflection_E", "tabi_gen_E", "tabi_res_E.annot",
+# 		"tabi_res_F", "tabi_inflection_F", "tabi_gen_F", "tabi_res_F.annot",
+# 		"tabi_res_M", "tabi_inflection_M", "tabi_gen_M", "tabi_res_M.annot",
+# 		"tabi_res_T", "tabi_inflection_T", "tabi_gen_T", "tabi_res_T.annot"
+# 	), file="TABI_formatted_results.RData"
+# )
 
-tabi_res_T = collect_res("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_inflection_T = collect_inflections("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_gen_T = collect_generated_quantities("T", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_res_T.annot = annotate_res(tabi_res_T)
-
-tabi_res_M = collect_res("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_inflection_M = collect_inflections("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_gen_M = collect_generated_quantities("M", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_res_M.annot = annotate_res(tabi_res_M)
-
-tabi_res_F = collect_res("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_inflection_F = collect_inflections("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_gen_F = collect_generated_quantities("F", sprintf("%s/tabi_res_11_07_2018", my_data_dir))
-tabi_res_F.annot = annotate_res(tabi_res_F)
+load("TABI_formatted_results.RData")
 
 #############################################################
 # Plot all genes ############################################
